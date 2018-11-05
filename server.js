@@ -8,5 +8,3 @@ setInterval(function() {
 var server = app.listen(port, function() {
   console.log('Express server listening on port ' + port);
 });
-
-// This is just to add a comment
