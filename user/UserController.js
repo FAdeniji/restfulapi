@@ -14,7 +14,7 @@ var bcrypt = require('bcryptjs');
 router.post('/register', function(req, res) {
 
   var hashedPassword = bcrypt.hashSync(req.body.password, 8);
-  console.log(`name: ${req.body.name} email: ${req.body.email} password: ${req.body.password}`);
+  // console.log(`name: ${req.body.name} email: ${req.body.email} password: ${req.body.password}`);
 
   User.create({
     name : req.body.name,
@@ -60,7 +60,7 @@ router.get('/users', function (req, res) {
 
 // route to authenticate a user (POST http://localhost:3000/api/authenticate)
 router.post('/authenticate', function (req, res) {
-  
+
   // find the user
   User.findOne({
     name: req.body.name
@@ -73,30 +73,31 @@ router.post('/authenticate', function (req, res) {
     } else if (user) {
 
       // check if password matches
-      console.log(`username: ${user.password}`);
-      console.log(`req.body.password: ${req.body.password}`);
-      if (user.password != req.body.password) {
-        res.json({ success: false, message: 'Authentication failed. Wrong password.' });
-      } else {
+      bcrypt.compare(req.body.password, user.password, function(err, result) {
+        if(result) {
+         // Passwords match
+         // if user is found and password is right
+         // create a token with only our given payload
+         // we don't want to pass in the entire user since that has the password
+         const payload = {
+           admin: user.admin
+         };
 
-        // if user is found and password is right
-        // create a token with only our given payload
-        // we don't want to pass in the entire user since that has the password
-        const payload = {
-          admin: user.admin
-        };
+         var token = jwt.sign(payload, config.secret, {
+           expiresIn: 86400 // expires in 24 hours
+         });
 
-        var token = jwt.sign(payload, config.secret, {
-          expiresIn: 86400 // expires in 24 hours
-        });
-
-        // return the information including token as JSON
-        res.json({
-          success: true,
-          message: 'Enjoy your token!',
-          token: token
-        });
-      }
+         // return the information including token as JSON
+         res.json({
+           success: true,
+           message: 'Enjoy your token!',
+           token: token
+         });
+        } else {
+         // Passwords don't match
+         res.json({ success: false, message: 'Authentication failed. Wrong password.' });
+        }
+      });
     }
   });
 });
@@ -105,7 +106,7 @@ router.post('/authenticate', function (req, res) {
 router.get('/:id', function (req, res) {
 
   var token = req.headers['x-access-token'];
-  console.log(token);
+  //console.log(token);
 
   if (!token) return res.status(401).send({ auth: false, message: 'No token provided.' });
 
@@ -126,7 +127,7 @@ router.get('/:id', function (req, res) {
 router.delete('/:id', function (req, res) {
 
   var token = req.headers['x-access-token'];
-  console.log(token);
+  //console.log(token);
 
   if (!token) return res.status(401).send({ auth: false, message: 'No token provided.' });
 
@@ -145,7 +146,7 @@ router.delete('/:id', function (req, res) {
 // UPDATES A SINGLE USER IN THE DATABASE
 router.put('/:id', function (req, res) {
   var token = req.headers['x-access-token'];
-  console.log(token);
+  //console.log(token);
 
   if (!token) return res.status(401).send({ auth: false, message: 'No token provided.' });
 
